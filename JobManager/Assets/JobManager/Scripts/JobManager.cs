@@ -1,4 +1,4 @@
-﻿#define LogTaskTime
+﻿//#define DEBUG
 using UnityEngine;
 using System.Collections;
 using System;
@@ -9,16 +9,17 @@ namespace JobManagerSpace
     public class JobManager : MonoBehaviour
     {
         public static JobManager I;
+        public bool checkDuplicate = true;
 
         void Awake()
         {
             I = this;
         }
 
-        public bool isWorking { get { return jobs.Count > 0; } }
+        public static bool isWorking { get { return jobs.Count > 0; } }
 
         static readonly Stack<Job> jobCache = new Stack<Job>();
-        List<Job> jobs = new List<Job>();
+        static List<Job> jobs = new List<Job>();
 
 
         public static Job NewJob(string name, Task[] tasks)
@@ -50,6 +51,12 @@ namespace JobManagerSpace
 
         private bool ValidateJob(Job job)
         {
+            if (checkDuplicate)
+            {
+                if (isDublicate(job))
+                    return false;
+            }
+
             return job.ValidateJob();
         }
 
@@ -74,6 +81,19 @@ namespace JobManagerSpace
                     }
                 }
             }
+        }
+
+        public bool isDublicate(Job job)
+        {
+            for (int i = 0; i < jobs.Count; i++)
+            {
+                if (jobs[i].name == job.name)
+                {
+                    return true;                   
+                }
+            }
+
+            return false;
         }
 
         #region DEBUG
@@ -232,7 +252,7 @@ namespace JobManagerSpace
                     Stopped(curTaskIdx);
                     yield break;
                 }
-#if LogTaskTime
+#if DEBUG
                 startTaskTime = DateTime.Now;
                 startTaskFrame = Time.frameCount;
 #endif
@@ -262,7 +282,10 @@ namespace JobManagerSpace
                             {
 #if UNITY_EDITOR
                                 Debug.LogError(ex);
+#else
+                                Debug.LogWarning("Error Job.Run: " + ex);
 #endif
+
                                 Failed(curTaskIdx);
                                 yield break;
                             }
@@ -292,7 +315,7 @@ namespace JobManagerSpace
                     }
                 }
 
-#if LogTaskTime
+#if DEBUG
                 TimeSpan result = DateTime.Now.Subtract(startTaskTime);
                 float duration = (float)result.TotalMilliseconds;
                 int frDuration = Time.frameCount - startTaskFrame;
@@ -329,7 +352,7 @@ namespace JobManagerSpace
             TimeSpan result = DateTime.Now.Subtract(startTime);
             float duration = (float)result.TotalMilliseconds;
             int frDuration = Time.frameCount - startFrame;
-            Debug.LogWarning("Job: " + name + " Stopped at task " + taskIdx + ". Time: " + duration.ToString("f2") + "ms, " + frDuration + " fr");
+            Debug.Log("Job: " + name + " Stopped at task " + taskIdx + ". Time: " + duration.ToString("f2") + "ms, " + frDuration + " fr");
             tasks = null;
             state = JobStates.Done;
         }
