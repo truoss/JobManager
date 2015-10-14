@@ -124,6 +124,9 @@ namespace JobManagerSpace
             Unknown
         }
         public JobStates state = JobStates.Unknown;
+        Action OnFinished;
+        Action OnFailed;
+        Action OnStopped;
         int curTaskIdx = 0;
 
         DateTime startTime;
@@ -201,6 +204,10 @@ namespace JobManagerSpace
 
             // set parameter
             this.name = name;
+
+            OnFailed = null;
+            OnFinished = null;
+            OnStopped = null;
         }
 
         public Job(string name, Task[] tasks)
@@ -210,6 +217,23 @@ namespace JobManagerSpace
             // set parameter
             this.name = name;
             this.tasks = tasks;
+
+            OnFailed = null;
+            OnFinished = null;
+            OnStopped = null;
+        }
+
+        public Job(string name, Task[] tasks, Action callbackFinished, Action callbackStopped, Action callbackFailed)
+        {
+            state = JobStates.Created;
+
+            // set parameter
+            this.name = name;
+            this.tasks = tasks;
+
+            OnFailed = callbackFinished;
+            OnFinished = callbackStopped;
+            OnStopped = callbackFailed;
         }
 
         public void SetTasks(Task[] tasks)
@@ -335,6 +359,9 @@ namespace JobManagerSpace
             Debug.Log("Job: " + name + " with " + tasks.Length + " tasks finished! Time: " + duration.ToString("f2") + "ms, " + frDuration + " fr");
             tasks = null;
             state = JobStates.Done;
+
+            if (OnFinished != null)
+                OnFinished();
         }
 
         void Failed(int taskIdx)
@@ -345,6 +372,9 @@ namespace JobManagerSpace
             Debug.LogWarning("Job: " + name + " failed at task " + taskIdx + "! Time: " + duration.ToString("f2") + "ms, " + frDuration + " fr");
             tasks = null;
             state = JobStates.Done;
+
+            if (OnFailed != null)
+                OnFailed();
         }
 
         void Stopped(int taskIdx)
@@ -355,6 +385,9 @@ namespace JobManagerSpace
             Debug.Log("Job: " + name + " Stopped at task " + taskIdx + ". Time: " + duration.ToString("f2") + "ms, " + frDuration + " fr");
             tasks = null;
             state = JobStates.Done;
+
+            if (OnStopped != null)
+                OnStopped();
         }
 
         public string PrintDebug()
