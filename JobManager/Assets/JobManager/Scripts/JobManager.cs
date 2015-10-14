@@ -20,9 +20,13 @@ namespace JobManagerSpace
 
         static readonly Stack<Job> jobCache = new Stack<Job>();
         static List<Job> jobs = new List<Job>();
-
-
+        
         public static Job NewJob(string name, Task[] tasks)
+        {
+            return NewJob(name, tasks, null, null, null);
+        }
+
+        public static Job NewJob(string name, Task[] tasks, Action callbackFinished, Action callbackStopped, Action callbackFailed)
         {
             if (jobCache.Count > 0)
             {
@@ -31,11 +35,14 @@ namespace JobManagerSpace
                 if (tasks != null)
                     job.SetTasks(tasks);
                 job.name = name;
+                job.OnFinished = callbackFinished;
+                job.OnStopped = callbackStopped;
+                job.OnFailed = callbackFailed;
 
                 return job;
             }
             else
-                return new Job(name, tasks);
+                return new Job(name, tasks, callbackFinished, callbackStopped, callbackFailed);
         }
 
         public bool AddJob(Job job)
@@ -124,9 +131,9 @@ namespace JobManagerSpace
             Unknown
         }
         public JobStates state = JobStates.Unknown;
-        Action OnFinished;
-        Action OnFailed;
-        Action OnStopped;
+        public Action OnFinished;
+        public Action OnFailed;
+        public Action OnStopped;
         int curTaskIdx = 0;
 
         DateTime startTime;
