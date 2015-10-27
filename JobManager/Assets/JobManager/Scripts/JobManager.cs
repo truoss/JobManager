@@ -247,6 +247,14 @@ namespace JobManagerSpace
         {
             this.tasks = tasks;
         }
+		
+		public void AddTask(Task task)
+        {
+            var tmp = new List<Task>(this.tasks);
+            tmp.Add(task);
+            tasks = tmp.ToArray();
+            tmp.Clear();
+        }
 
         public IEnumerator Run()
         {
